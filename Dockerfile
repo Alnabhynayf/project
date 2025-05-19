@@ -1,6 +1,6 @@
 FROM php:8.2-apache
 
-# Install system dependencies & PHP extensions
+# تثبيت dependencies النظام وملحقات PHP
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -14,41 +14,66 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     libgd-dev \
     curl \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \
     pdo \
     pdo_mysql \
     intl \
     zip \
     gd \
-    calendar
+    calendar \
+    && pecl install redis && docker-php-ext-enable redis
 
-# Enable Apache Rewrite Module
-RUN a2enmod rewrite
+# تفعيل Apache modules
+RUN a2enmod rewrite headers
 
-# Set working directory
+# تعيين مجلد العمل
 WORKDIR /var/www/html
 
-# Copy project files
+# نسخ ملفات المشروع
 COPY . .
 
-# Install Composer (latest stable)
-RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer
+# تثبيت Composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# ✅ Fix cache error - Create cache path manually
-RUN mkdir -p bootstrap/cache && \
-    mkdir -p storage/framework/{cache,sessions,views} && \
-    mkdir -p storage/logs && \
-    chown -R www-data:www-data bootstrap/cache storage && \
-    chmod -R 755 bootstrap/cache storage
+# إنشاء مجلدات التخزين وتعيين الصلاحيات
+RUN mkdir -p \
+    storage/framework/{cache,sessions,views} \
+    storage/logs \
+    bootstrap/cache \
+    && chown -R www-data:www-data \
+    storage \
+    bootstrap/cache \
+    && chmod -R 775 \
+    storage \
+    bootstrap/cache
 
-# Install Laravel dependencies (optimized)
-RUN composer install --optimize-autoloader --no-dev --no-plugins
+# تثبيت dependencies
+RUN composer install --optimize-autoloader --no-dev --no-interaction
 
-# Permissions
-RUN chown -R www-data:www-data /var/www/html
+# إنشاء ملف .env إذا لم يكن موجوداً
+RUN if [ ! -f .env ]; then \
+    cp .env.example .env \
+    && php artisan key:generate; \
+    fi
 
-# Expose port
+# تهيئة التطبيق
+RUN php artisan storage:link \
+    && php artisan optimize:clear \
+    && php artisan config:cache \
+    && php artisan route:cache \
+    && php artisan view:cache
+
+# تعيين DocumentRoot لـ Apache
+ENV APACHE_DOCUMENT_ROOT /var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
+RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+
+# تعيين الصلاحيات النهائية
+RUN chown -R www-data:www-data /var/www/html \
+    && chmod -R 775 /var/www/html/storage
+
 EXPOSE 80
 
-# Start Laravel with artisan
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=80"]
+# تشغيل Apache بدلاً من artisan serve (أفضل لـ Render)
+CMD ["apache2-foreground"]

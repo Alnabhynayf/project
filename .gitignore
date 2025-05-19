@@ -1,0 +1,43 @@
+# 🧠 Laravel Ignore Rules
+.env
+.env.testing
+.env.backup
+.php_cs.cache
+.phpunit.result.cache
+.idea
+.vscode
+.vagrant
+Homestead.json
+Homestead.yaml
+
+# 💾 نظام الملفات
+/storage/*
+!/storage/app/public
+/public/storage
+/public/hot
+/public/vendor
+/public/css
+/public/js
+
+# 🔌 Node & Vendor
+/node_modules
+npm-debug.log
+package-lock.json
+yarn.lock
+yarn-error.log
+
+# 🐘 Composer
+/vendor
+composer.lock
+
+# 🧪 Testing
+/test-results
+/playwright-report
+*.hot
+
+# 🗂️ Laravel إضافية
+/stubs
+/data
+/docker-compose-collection
+/ignorables/*
+/lang/vendor

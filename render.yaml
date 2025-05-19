@@ -1,38 +1,9 @@
 services:
   - type: web
-    name: laravel-project
-    env: php
+    name: bagisto-store
+    env: docker
     plan: free
-    buildCommand: "composer install && php artisan key:generate && php artisan migrate --force"
-    startCommand: "php artisan serve --host 0.0.0.0 --port $PORT"
-    envVars:
-      - key: APP_ENV
-        value: production
-      - key: APP_KEY
-        generateValue: true
-      - key: APP_DEBUG
-        value: false
-      - key: DB_CONNECTION
-        value: mysql
-      - key: DB_HOST
-        fromDatabase:
-          name: laravel-db
-          property: host
-      - key: DB_PORT
-        value: 3306
-      - key: DB_DATABASE
-        fromDatabase:
-          name: laravel-db
-          property: database
-      - key: DB_USERNAME
-        fromDatabase:
-          name: laravel-db
-          property: user
-      - key: DB_PASSWORD
-        fromDatabase:
-          name: laravel-db
-          property: password
-
-databases:
-  - name: laravel-db
-    plan: free
+    dockerfilePath: ./Dockerfile
+    buildCommand: ""
+    startCommand: ""
+    autoDeploy: true

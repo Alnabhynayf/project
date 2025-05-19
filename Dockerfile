@@ -34,15 +34,21 @@ COPY . .
 # Install Composer (latest stable)
 RUN curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer
 
-# Install Laravel dependencies (optimized)
-RUN composer install --optimize-autoloader --no-dev
+# ✅ Fix cache error - Create cache path manually
+RUN mkdir -p bootstrap/cache && \
+    mkdir -p storage/framework/{cache,sessions,views} && \
+    mkdir -p storage/logs && \
+    chown -R www-data:www-data bootstrap/cache storage && \
+    chmod -R 755 bootstrap/cache storage
 
-# Set permissions for Laravel
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/storage
+# Install Laravel dependencies (optimized)
+RUN composer install --optimize-autoloader --no-dev --no-plugins
+
+# Permissions
+RUN chown -R www-data:www-data /var/www/html
 
 # Expose port
 EXPOSE 80
 
-# Start Laravel using Artisan (instead of Apache index)
+# Start Laravel with artisan
 CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=80"]

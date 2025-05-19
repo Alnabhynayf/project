@@ -1,5 +1,5 @@
 # 🧠 Laravel Ignore Rules
-.env
+
 .env.testing
 .env.backup
 .php_cs.cache
